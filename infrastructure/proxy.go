@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"github.com/gin-gonic/gin"
 	"gopkg.in/yaml.v3"
+	"io"
 	"io/ioutil"
 	"log"
 	"net/http"
@@ -47,18 +48,8 @@ func Proxy(ctx *gin.Context) (*httputil.ReverseProxy, error) {
 
 	reverseProxy := httputil.NewSingleHostReverseProxy(parsedUrl)
 	reverseProxy.Director = func(request *http.Request) {
-		if len(ctx.Request.URL.RawQuery) > 0 {
-			request.URL.RawQuery = ctx.Request.URL.RawQuery
-		}
-		if ctx.Request.Method == "POST" || ctx.Request.Method == "PUT" || ctx.Request.Method == "PATCH" {
-			bodyAsBytes, _ := ioutil.ReadAll(ctx.Request.Body)
-			if len(string(bodyAsBytes)) > 0 {
-				body := ioutil.NopCloser(bytes.NewReader(bodyAsBytes))
-				if body != nil {
-					request.Body = body
-				}
-			}
-		}
+		setQuery(request, ctx.Request.URL.RawQuery)
+		setBody(request, ctx.Request.Method, ctx.Request.Body)
 		request.Host = parsedUrl.Host
 		request.URL.Scheme = parsedUrl.Scheme
 		request.URL.Host = parsedUrl.Host
@@ -66,6 +57,24 @@ func Proxy(ctx *gin.Context) (*httputil.ReverseProxy, error) {
 		request.Header.Set("x-account-token", ctx.Request.Header.Get("x-account-token"))
 	}
 	return reverseProxy, nil
+}
+
+func setQuery(request *http.Request, query string) {
+	if len(query) > 0 {
+		request.URL.RawQuery = query
+	}
+}
+
+func setBody(request *http.Request, method string, reqBody io.ReadCloser) {
+	if method == "POST" || method == "PUT" || method == "PATCH" {
+		bodyAsBytes, _ := ioutil.ReadAll(reqBody)
+		if len(string(bodyAsBytes)) > 0 {
+			body := ioutil.NopCloser(bytes.NewReader(bodyAsBytes))
+			if body != nil {
+				request.Body = body
+			}
+		}
+	}
 }
 
 func buildUrl(serviceUrl string, path string) (string, error) {
