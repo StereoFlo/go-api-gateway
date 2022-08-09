@@ -41,6 +41,7 @@ func loadServiceMethod(httpMethod string, c *ServiceConfig, path string) (string
 		}
 		for method := range data {
 			upMethod := strings.ToUpper(method)
+			fmt.Println(ok, upMethod, httpMethod)
 			if ok && upMethod == httpMethod {
 				targetUrl, _ := buildUrl(c.Servers[0].Url, path)
 				return targetUrl, nil
@@ -79,9 +80,14 @@ func Proxy(ctx *gin.Context) (*httputil.ReverseProxy, error) {
 		if len(ctx.Request.URL.RawQuery) > 0 {
 			request.URL.RawQuery = ctx.Request.URL.RawQuery
 		}
-		bodyAsByteArray, _ := ioutil.ReadAll(ctx.Request.Body)
-		if len(string(bodyAsByteArray)) > 0 {
-			request.Body = ctx.Request.Body
+		if ctx.Request.Method == "POST" || ctx.Request.Method == "PUT" || ctx.Request.Method == "PATCH" {
+			bodyAsByteArray, _ := ioutil.ReadAll(ctx.Request.Body)
+			if len(string(bodyAsByteArray)) > 0 {
+				body := ioutil.NopCloser(bytes.NewReader(bodyAsByteArray))
+				if body != nil {
+					request.Body = body
+				}
+			}
 		}
 		request.Host = parsedUrl.Host
 		request.URL.Scheme = parsedUrl.Scheme

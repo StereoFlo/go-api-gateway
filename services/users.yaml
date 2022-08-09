@@ -18,6 +18,11 @@ paths:
       responses:
         '200':
           description: OK
+    post:
+      summary: Создать юзера
+      responses:
+        '200':
+          description: OK
   /v1/users/:id:
     get:
       summary: Возвращает не список
