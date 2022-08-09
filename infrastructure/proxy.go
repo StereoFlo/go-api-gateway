@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/gin-gonic/gin"
+	"github.com/gokyle/filecache"
 	"gopkg.in/yaml.v3"
 	"io"
 	"io/ioutil"
@@ -101,7 +102,9 @@ func (s ProxyStr) loadServiceConfig(path string) (*ServiceConfig, error) {
 		return nil, errors.New(fmt.Sprintf("failed to parse target host from path: %s", path))
 	}
 	serviceName := fmt.Sprintf("%s", parts[0])
-	yamlFile, err := ioutil.ReadFile("services-config/" + serviceName + ".yaml")
+	cache := filecache.NewDefaultCache()
+	cache.Start()
+	yamlFile, err := cache.ReadFile("services-config/" + serviceName + ".yaml")
 	if err != nil {
 		log.Printf(serviceName+".Get err   #%v ", err)
 		return nil, err
