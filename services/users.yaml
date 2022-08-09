@@ -1,0 +1,49 @@
+openapi: 3.0.0
+info:
+  title: ''
+  version: 2.2.1
+  description: ''
+servers:
+  - url: http://localhost:8081
+paths:
+  /v1/users:
+    get:
+      summary: Возвращает список
+      tags:
+        - Дополнительное образование
+      parameters:
+        - name: search
+          in: query
+          description: Шаблон поиска по наименованию
+          schema:
+            type: string
+      responses:
+        '200':
+          description: OK
+    post:
+      summary: Возвращает список
+      tags:
+        - Дополнительное образование
+      parameters:
+        - name: search
+          in: query
+          description: Шаблон поиска по наименованию
+          schema:
+            type: string
+      responses:
+        '200':
+          description: OK
+  /v1/users/:id:
+    get:
+      summary: Возвращает не список
+      tags:
+        - Дополнительное образование
+      parameters:
+        - name: search
+          in: query
+          description: Шаблон поиска по наименованию
+          schema:
+            type: string
+      responses:
+        '200':
+          description: OK
