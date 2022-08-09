@@ -34,17 +34,14 @@ func Proxy(ctx *gin.Context) (*httputil.ReverseProxy, error) {
 	path := ctx.Request.URL.Path
 	c, e := loadServiceConfig(path)
 	if e != nil {
-		ctx.AbortWithStatus(http.StatusNotFound)
 		return nil, e
 	}
 	urlTxt, err := loadServiceMethod(ctx.Request.Method, c, path)
 	if err != nil {
-		ctx.AbortWithStatus(http.StatusNotFound)
 		return nil, err
 	}
 	parsedUrl, err := url.Parse(urlTxt)
 	if err != nil {
-		ctx.AbortWithStatus(http.StatusNotFound)
 		return nil, err
 	}
 
