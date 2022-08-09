@@ -74,15 +74,18 @@ func (s ProxyStr) setQuery(request *http.Request, query string) {
 }
 
 func setBody(request *http.Request, method string, reqBody io.ReadCloser) {
-	if method == "POST" || method == "PUT" || method == "PATCH" {
-		bodyAsBytes, _ := ioutil.ReadAll(reqBody)
-		if len(string(bodyAsBytes)) > 0 {
-			body := ioutil.NopCloser(bytes.NewReader(bodyAsBytes))
-			if body != nil {
-				request.Body = body
-			}
-		}
+	if method != "POST" && method != "PUT" && method != "PATCH" {
+		return
 	}
+	bodyAsBytes, _ := ioutil.ReadAll(reqBody)
+	if len(string(bodyAsBytes)) <= 0 {
+		return
+	}
+	body := ioutil.NopCloser(bytes.NewReader(bodyAsBytes))
+	if body == nil {
+		return
+	}
+	request.Body = body
 }
 
 func (s ProxyStr) buildUrl(serviceUrl string, path string) (string, error) {
