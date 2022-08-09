@@ -31,13 +31,21 @@ type Server struct {
 	Url string `yaml:"url"`
 }
 
-func Proxy(ctx *gin.Context) (*httputil.ReverseProxy, error) {
-	path := ctx.Request.URL.Path
+type ProxyStr struct {
+	context *gin.Context
+}
+
+func BewProxy(context *gin.Context) *ProxyStr {
+	return &ProxyStr{context}
+}
+
+func (s ProxyStr) ReverseProxy() (*httputil.ReverseProxy, error) {
+	path := s.context.Request.URL.Path
 	c, e := loadServiceConfig(path)
 	if e != nil {
 		return nil, e
 	}
-	urlTxt, err := loadServiceMethod(ctx.Request.Method, c, path)
+	urlTxt, err := s.loadServiceMethod(s.context.Request.Method, c, path)
 	if err != nil {
 		return nil, err
 	}
@@ -48,18 +56,18 @@ func Proxy(ctx *gin.Context) (*httputil.ReverseProxy, error) {
 
 	reverseProxy := httputil.NewSingleHostReverseProxy(parsedUrl)
 	reverseProxy.Director = func(request *http.Request) {
-		setQuery(request, ctx.Request.URL.RawQuery)
-		setBody(request, ctx.Request.Method, ctx.Request.Body)
+		s.setQuery(request, s.context.Request.URL.RawQuery)
+		setBody(request, s.context.Request.Method, s.context.Request.Body)
 		request.Host = parsedUrl.Host
 		request.URL.Scheme = parsedUrl.Scheme
 		request.URL.Host = parsedUrl.Host
 		request.URL.Path = parsedUrl.Path
-		request.Header.Set("x-account-token", ctx.Request.Header.Get("x-account-token"))
+		request.Header.Set("x-account-token", s.context.Request.Header.Get("x-account-token"))
 	}
 	return reverseProxy, nil
 }
 
-func setQuery(request *http.Request, query string) {
+func (s ProxyStr) setQuery(request *http.Request, query string) {
 	if len(query) > 0 {
 		request.URL.RawQuery = query
 	}
@@ -77,7 +85,7 @@ func setBody(request *http.Request, method string, reqBody io.ReadCloser) {
 	}
 }
 
-func buildUrl(serviceUrl string, path string) (string, error) {
+func (s ProxyStr) buildUrl(serviceUrl string, path string) (string, error) {
 	parts := strings.Split(strings.TrimPrefix(path, "/"), "/")
 	targetUrl := serviceUrl + "/" + strings.Join(parts[1:], "/")
 	return targetUrl, nil
@@ -104,7 +112,7 @@ func loadServiceConfig(path string) (*ServiceConfig, error) {
 	return sc, nil
 }
 
-func loadServiceMethod(httpMethod string, c *ServiceConfig, path string) (string, error) {
+func (s ProxyStr) loadServiceMethod(httpMethod string, c *ServiceConfig, path string) (string, error) {
 	for configPath, data := range c.Paths {
 		m := regexp.MustCompile(`:[a-z]+`)
 		regexPath := m.ReplaceAllString(configPath, `.*`)
@@ -116,7 +124,7 @@ func loadServiceMethod(httpMethod string, c *ServiceConfig, path string) (string
 			upMethod := strings.ToUpper(method)
 			fmt.Println(ok, upMethod, httpMethod)
 			if ok && upMethod == httpMethod {
-				targetUrl, _ := buildUrl(c.Servers[0].Url, path) //todo Servers[0] ??
+				targetUrl, _ := s.buildUrl(c.Servers[0].Url, path) //todo Servers[0] ??
 				return targetUrl, nil
 			}
 		}

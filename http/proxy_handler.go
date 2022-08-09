@@ -7,11 +7,12 @@ import (
 )
 
 func HandleProxy(ctx *gin.Context) {
-	proxy, err := infrastructure.Proxy(ctx)
+	proxy := infrastructure.BewProxy(ctx)
+	rp, err := proxy.ReverseProxy()
 	if err != nil {
 		ctx.AbortWithStatus(http.StatusNotFound)
 		return
 	}
-	proxy.ServeHTTP(ctx.Writer, ctx.Request)
+	rp.ServeHTTP(ctx.Writer, ctx.Request)
 	return
 }
