@@ -42,7 +42,7 @@ func loadServiceMethod(httpMethod string, c *ServiceConfig, path string) (string
 			upMethod := strings.ToUpper(method)
 			fmt.Println(ok, upMethod, httpMethod)
 			if ok && upMethod == httpMethod {
-				targetUrl, _ := buildUrl(c.Servers[0].Url, path)
+				targetUrl, _ := buildUrl(c.Servers[0].Url, path) //todo Servers[0] ??
 				return targetUrl, nil
 			}
 		}
