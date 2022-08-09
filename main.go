@@ -10,7 +10,7 @@ import (
 
 func init() {
 	if err := godotenv.Load(); err != nil {
-		log.Panicln("no env gotten")
+		log.Fatalln("no env gotten")
 	}
 }
 
