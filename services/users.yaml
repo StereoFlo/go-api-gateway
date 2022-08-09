@@ -9,41 +9,18 @@ paths:
   /v1/users:
     get:
       summary: Возвращает список
-      tags:
-        - Дополнительное образование
       parameters:
-        - name: search
+        - name: limit
           in: query
-          description: Шаблон поиска по наименованию
+          description: Лимит списка
           schema:
-            type: string
-      responses:
-        '200':
-          description: OK
-    post:
-      summary: Возвращает список
-      tags:
-        - Дополнительное образование
-      parameters:
-        - name: search
-          in: query
-          description: Шаблон поиска по наименованию
-          schema:
-            type: string
+            type: number
       responses:
         '200':
           description: OK
   /v1/users/:id:
     get:
       summary: Возвращает не список
-      tags:
-        - Дополнительное образование
-      parameters:
-        - name: search
-          in: query
-          description: Шаблон поиска по наименованию
-          schema:
-            type: string
       responses:
         '200':
           description: OK
