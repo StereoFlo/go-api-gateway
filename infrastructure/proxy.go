@@ -16,11 +16,11 @@ import (
 )
 
 type ServiceConfig struct {
-	Paths   map[string]Patch `yaml:"paths"`
-	Servers []Server         `yaml:"servers"`
+	Paths   map[string]Path `yaml:"paths"`
+	Servers []Server        `yaml:"servers"`
 }
 
-type Patch map[string]Method
+type Path map[string]Method
 
 type Method struct {
 	Summary string `yaml:"summary"`
