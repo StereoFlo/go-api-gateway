@@ -35,7 +35,7 @@ type ProxyStr struct {
 	context *gin.Context
 }
 
-func BewProxy(context *gin.Context) *ProxyStr {
+func NewProxy(context *gin.Context) *ProxyStr {
 	return &ProxyStr{context}
 }
 

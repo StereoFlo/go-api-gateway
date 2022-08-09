@@ -7,7 +7,7 @@ import (
 )
 
 func HandleProxy(ctx *gin.Context) {
-	proxy := infrastructure.BewProxy(ctx)
+	proxy := infrastructure.NewProxy(ctx)
 	rp, err := proxy.ReverseProxy()
 	if err != nil {
 		ctx.AbortWithStatus(http.StatusNotFound)
