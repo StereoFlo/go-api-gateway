@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"github.com/gin-gonic/gin"
-	"github.com/sirupsen/logrus"
 	"gopkg.in/yaml.v3"
 	"io/ioutil"
 	"log"
@@ -95,29 +94,7 @@ func Proxy(ctx *gin.Context) (*httputil.ReverseProxy, error) {
 		request.URL.Path = parsedUrl.Path
 		request.Header.Set("x-account-token", ctx.Request.Header.Get("x-account-token"))
 	}
-	reverseProxy.ModifyResponse = func(response *http.Response) error {
-		if response.StatusCode == http.StatusInternalServerError {
-			s := readBody(response)
-			logrus.Errorf("req %s ,with error %d, body:%s", parsedUrl, response.StatusCode, s)
-			response.Body = ioutil.NopCloser(bytes.NewReader([]byte(fmt.Sprintf("error"))))
-		} else if response.StatusCode > 300 {
-			s := readBody(response)
-			logrus.Errorf("req %s ,with error %d, body:%s", parsedUrl, response.StatusCode, s)
-			response.Body = ioutil.NopCloser(bytes.NewReader([]byte(s)))
-		}
-		return nil
-	}
 	return reverseProxy, nil
-}
-
-func readBody(response *http.Response) string {
-	defer response.Body.Close()
-	all, _ := ioutil.ReadAll(response.Body)
-	var bodyString string
-	if len(all) > 0 {
-		bodyString = string(all)
-	}
-	return bodyString
 }
 
 func loadServiceConfig(path string) (*ServiceConfig, error) {
