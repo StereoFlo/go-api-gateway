@@ -81,9 +81,9 @@ func Proxy(ctx *gin.Context) (*httputil.ReverseProxy, error) {
 			request.URL.RawQuery = ctx.Request.URL.RawQuery
 		}
 		if ctx.Request.Method == "POST" || ctx.Request.Method == "PUT" || ctx.Request.Method == "PATCH" {
-			bodyAsByteArray, _ := ioutil.ReadAll(ctx.Request.Body)
-			if len(string(bodyAsByteArray)) > 0 {
-				body := ioutil.NopCloser(bytes.NewReader(bodyAsByteArray))
+			bodyAsBytes, _ := ioutil.ReadAll(ctx.Request.Body)
+			if len(string(bodyAsBytes)) > 0 {
+				body := ioutil.NopCloser(bytes.NewReader(bodyAsBytes))
 				if body != nil {
 					request.Body = body
 				}
