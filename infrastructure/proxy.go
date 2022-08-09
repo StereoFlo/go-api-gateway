@@ -30,32 +30,6 @@ type Server struct {
 	Url string `yaml:"url"`
 }
 
-func loadServiceMethod(httpMethod string, c *ServiceConfig, path string) (string, error) {
-	for configPath, data := range c.Paths {
-		m := regexp.MustCompile(`:[a-z]+`)
-		regexPath := m.ReplaceAllString(configPath, `.*`)
-		ok, merr := regexp.MatchString(regexPath, path)
-		if merr != nil {
-			return "", merr
-		}
-		for method := range data {
-			upMethod := strings.ToUpper(method)
-			fmt.Println(ok, upMethod, httpMethod)
-			if ok && upMethod == httpMethod {
-				targetUrl, _ := buildUrl(c.Servers[0].Url, path) //todo Servers[0] ??
-				return targetUrl, nil
-			}
-		}
-	}
-	return "", errors.New("something is wrong")
-}
-
-func buildUrl(serviceUrl string, path string) (string, error) {
-	parts := strings.Split(strings.TrimPrefix(path, "/"), "/")
-	targetUrl := serviceUrl + "/" + strings.Join(parts[1:], "/")
-	return targetUrl, nil
-}
-
 func Proxy(ctx *gin.Context) (*httputil.ReverseProxy, error) {
 	path := ctx.Request.URL.Path
 	c, e := loadServiceConfig(path)
@@ -97,6 +71,12 @@ func Proxy(ctx *gin.Context) (*httputil.ReverseProxy, error) {
 	return reverseProxy, nil
 }
 
+func buildUrl(serviceUrl string, path string) (string, error) {
+	parts := strings.Split(strings.TrimPrefix(path, "/"), "/")
+	targetUrl := serviceUrl + "/" + strings.Join(parts[1:], "/")
+	return targetUrl, nil
+}
+
 func loadServiceConfig(path string) (*ServiceConfig, error) {
 	parts := strings.Split(strings.TrimPrefix(path, "/"), "/")
 	if len(parts) <= 1 {
@@ -116,4 +96,24 @@ func loadServiceConfig(path string) (*ServiceConfig, error) {
 	}
 
 	return sc, nil
+}
+
+func loadServiceMethod(httpMethod string, c *ServiceConfig, path string) (string, error) {
+	for configPath, data := range c.Paths {
+		m := regexp.MustCompile(`:[a-z]+`)
+		regexPath := m.ReplaceAllString(configPath, `.*`)
+		ok, merr := regexp.MatchString(regexPath, path)
+		if merr != nil {
+			return "", merr
+		}
+		for method := range data {
+			upMethod := strings.ToUpper(method)
+			fmt.Println(ok, upMethod, httpMethod)
+			if ok && upMethod == httpMethod {
+				targetUrl, _ := buildUrl(c.Servers[0].Url, path) //todo Servers[0] ??
+				return targetUrl, nil
+			}
+		}
+	}
+	return "", errors.New("something is wrong")
 }
