@@ -41,7 +41,7 @@ func BewProxy(context *gin.Context) *ProxyStr {
 
 func (s ProxyStr) ReverseProxy() (*httputil.ReverseProxy, error) {
 	path := s.context.Request.URL.Path
-	c, e := loadServiceConfig(path)
+	c, e := s.loadServiceConfig(path)
 	if e != nil {
 		return nil, e
 	}
@@ -57,7 +57,7 @@ func (s ProxyStr) ReverseProxy() (*httputil.ReverseProxy, error) {
 	reverseProxy := httputil.NewSingleHostReverseProxy(parsedUrl)
 	reverseProxy.Director = func(request *http.Request) {
 		s.setQuery(request, s.context.Request.URL.RawQuery)
-		setBody(request, s.context.Request.Method, s.context.Request.Body)
+		s.setBody(request, s.context.Request.Method, s.context.Request.Body)
 		request.Host = parsedUrl.Host
 		request.URL.Scheme = parsedUrl.Scheme
 		request.URL.Host = parsedUrl.Host
@@ -68,12 +68,13 @@ func (s ProxyStr) ReverseProxy() (*httputil.ReverseProxy, error) {
 }
 
 func (s ProxyStr) setQuery(request *http.Request, query string) {
-	if len(query) > 0 {
-		request.URL.RawQuery = query
+	if len(query) <= 0 {
+		return
 	}
+	request.URL.RawQuery = query
 }
 
-func setBody(request *http.Request, method string, reqBody io.ReadCloser) {
+func (s ProxyStr) setBody(request *http.Request, method string, reqBody io.ReadCloser) {
 	if method != "POST" && method != "PUT" && method != "PATCH" {
 		return
 	}
@@ -94,7 +95,7 @@ func (s ProxyStr) buildUrl(serviceUrl string, path string) (string, error) {
 	return targetUrl, nil
 }
 
-func loadServiceConfig(path string) (*ServiceConfig, error) {
+func (s ProxyStr) loadServiceConfig(path string) (*ServiceConfig, error) {
 	parts := strings.Split(strings.TrimPrefix(path, "/"), "/")
 	if len(parts) <= 1 {
 		return nil, errors.New(fmt.Sprintf("failed to parse target host from path: %s", path))
