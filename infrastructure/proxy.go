@@ -7,7 +7,6 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/gokyle/filecache"
 	"gopkg.in/yaml.v3"
-	"io"
 	"io/ioutil"
 	"log"
 	"net/http"
@@ -41,12 +40,11 @@ func BewProxy(context *gin.Context) *ProxyStr {
 }
 
 func (s ProxyStr) ReverseProxy() (*httputil.ReverseProxy, error) {
-	path := s.context.Request.URL.Path
-	c, e := s.loadServiceConfig(path)
-	if e != nil {
-		return nil, e
+	serviceConfig, err := s.loadServiceConfig()
+	if err != nil {
+		return nil, err
 	}
-	urlTxt, err := s.loadServiceMethod(s.context.Request.Method, c, path)
+	urlTxt, err := s.loadServiceMethod(serviceConfig)
 	if err != nil {
 		return nil, err
 	}
@@ -57,8 +55,8 @@ func (s ProxyStr) ReverseProxy() (*httputil.ReverseProxy, error) {
 
 	reverseProxy := httputil.NewSingleHostReverseProxy(parsedUrl)
 	reverseProxy.Director = func(request *http.Request) {
-		s.setQuery(request, s.context.Request.URL.RawQuery)
-		s.setBody(request, s.context.Request.Method, s.context.Request.Body)
+		s.setQuery(request)
+		s.setBody(request)
 		request.Host = parsedUrl.Host
 		request.URL.Scheme = parsedUrl.Scheme
 		request.URL.Host = parsedUrl.Host
@@ -68,18 +66,19 @@ func (s ProxyStr) ReverseProxy() (*httputil.ReverseProxy, error) {
 	return reverseProxy, nil
 }
 
-func (s ProxyStr) setQuery(request *http.Request, query string) {
-	if len(query) <= 0 {
+func (s ProxyStr) setQuery(request *http.Request) {
+	if len(s.context.Request.URL.RawQuery) <= 0 {
 		return
 	}
-	request.URL.RawQuery = query
+	request.URL.RawQuery = s.context.Request.URL.RawQuery
 }
 
-func (s ProxyStr) setBody(request *http.Request, method string, reqBody io.ReadCloser) {
+func (s ProxyStr) setBody(request *http.Request) {
+	method := s.context.Request.Method
 	if method != "POST" && method != "PUT" && method != "PATCH" {
 		return
 	}
-	bodyAsBytes, _ := ioutil.ReadAll(reqBody)
+	bodyAsBytes, _ := ioutil.ReadAll(s.context.Request.Body)
 	if len(string(bodyAsBytes)) <= 0 {
 		return
 	}
@@ -96,10 +95,10 @@ func (s ProxyStr) buildUrl(serviceUrl string, path string) (string, error) {
 	return targetUrl, nil
 }
 
-func (s ProxyStr) loadServiceConfig(path string) (*ServiceConfig, error) {
-	parts := strings.Split(strings.TrimPrefix(path, "/"), "/")
+func (s ProxyStr) loadServiceConfig() (*ServiceConfig, error) {
+	parts := strings.Split(strings.TrimPrefix(s.context.Request.URL.Path, "/"), "/")
 	if len(parts) <= 1 {
-		return nil, errors.New(fmt.Sprintf("failed to parse target host from path: %s", path))
+		return nil, errors.New(fmt.Sprintf("failed to parse target host from path: %s", s.context.Request.URL.Path))
 	}
 	serviceName := fmt.Sprintf("%s", parts[0])
 	cache := filecache.NewDefaultCache()
@@ -119,19 +118,18 @@ func (s ProxyStr) loadServiceConfig(path string) (*ServiceConfig, error) {
 	return sc, nil
 }
 
-func (s ProxyStr) loadServiceMethod(httpMethod string, c *ServiceConfig, path string) (string, error) {
+func (s ProxyStr) loadServiceMethod(c *ServiceConfig) (string, error) {
 	for configPath, data := range c.Paths {
 		m := regexp.MustCompile(`:[a-z]+`)
 		regexPath := m.ReplaceAllString(configPath, `.*`)
-		ok, merr := regexp.MatchString(regexPath, path)
+		ok, merr := regexp.MatchString(regexPath, s.context.Request.URL.Path)
 		if merr != nil {
 			return "", merr
 		}
 		for method := range data {
 			upMethod := strings.ToUpper(method)
-			fmt.Println(ok, upMethod, httpMethod)
-			if ok && upMethod == httpMethod {
-				targetUrl, _ := s.buildUrl(c.Servers[0].Url, path) //todo Servers[0] ??
+			if ok && upMethod == s.context.Request.Method {
+				targetUrl, _ := s.buildUrl(c.Servers[0].Url, s.context.Request.URL.Path) //todo Servers[0] ??
 				return targetUrl, nil
 			}
 		}
