@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"github.com/gin-gonic/gin"
-	"github.com/palantir/stacktrace"
 	"github.com/sirupsen/logrus"
 	"gopkg.in/yaml.v3"
 	"io/ioutil"
@@ -77,10 +76,18 @@ func Proxy(ctx *gin.Context) (*httputil.ReverseProxy, error) {
 
 	reverseProxy := httputil.NewSingleHostReverseProxy(parsedUrl)
 	reverseProxy.Director = func(request *http.Request) {
+		if len(ctx.Request.URL.RawQuery) > 0 {
+			request.URL.RawQuery = ctx.Request.URL.RawQuery
+		}
+		bodyAsByteArray, _ := ioutil.ReadAll(ctx.Request.Body)
+		if len(string(bodyAsByteArray)) > 0 {
+			request.Body = ctx.Request.Body
+		}
 		request.Host = parsedUrl.Host
 		request.URL.Scheme = parsedUrl.Scheme
 		request.URL.Host = parsedUrl.Host
 		request.URL.Path = parsedUrl.Path
+		request.Header.Set("x-account-token", ctx.Request.Header.Get("x-account-token"))
 	}
 	reverseProxy.ModifyResponse = func(response *http.Response) error {
 		if response.StatusCode == http.StatusInternalServerError {
@@ -110,7 +117,7 @@ func readBody(response *http.Response) string {
 func loadServiceConfig(path string) (*ServiceConfig, error) {
 	parts := strings.Split(strings.TrimPrefix(path, "/"), "/")
 	if len(parts) <= 1 {
-		return nil, stacktrace.RootCause(fmt.Errorf("failed to parse target host from path: %s", path))
+		return nil, errors.New(fmt.Sprintf("failed to parse target host from path: %s", path))
 	}
 	serviceName := fmt.Sprintf("%s", parts[0])
 	yamlFile, err := ioutil.ReadFile("services/" + serviceName + ".yaml")
