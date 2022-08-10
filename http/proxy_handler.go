@@ -3,16 +3,17 @@ package http
 import (
 	"github.com/gin-gonic/gin"
 	"go_gw/infrastructure"
+	"log"
 	"net/http"
 )
 
 func HandleProxy(ctx *gin.Context) {
 	proxy := infrastructure.NewProxy(ctx)
-	rp, err := proxy.ReverseProxy()
+	err := proxy.ReverseProxy()
 	if err != nil {
-		ctx.AbortWithStatus(http.StatusNotFound)
+		log.Println(err)
+		ctx.AbortWithStatus(http.StatusServiceUnavailable)
 		return
 	}
-	rp.ServeHTTP(ctx.Writer, ctx.Request)
 	return
 }
