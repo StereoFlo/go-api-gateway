@@ -48,7 +48,7 @@ func (s Proxy) ReverseProxy() error {
 	if err != nil {
 		return err
 	}
-	httpMethod := *httpMethodPointer
+
 	targetUrl := s.buildUrl(serviceConfig.Servers[0].Url, s.context.Request.URL.Path) //todo Servers[0] ??
 	parsedUrl, err := url.Parse(targetUrl)
 	if err != nil {
@@ -59,7 +59,7 @@ func (s Proxy) ReverseProxy() error {
 	reverseProxy.Director = func(request *http.Request) {
 		s.setQuery(request)
 		s.setBody(request)
-		request.Method = httpMethod
+		request.Method = *httpMethodPointer
 		request.Host = parsedUrl.Host
 		request.URL.Scheme = parsedUrl.Scheme
 		request.URL.Host = parsedUrl.Host
