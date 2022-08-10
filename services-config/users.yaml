@@ -29,3 +29,9 @@ paths:
       responses:
         '200':
           description: OK
+  /auth/login:
+    post:
+      summary: Возвращает не список
+      responses:
+        '200':
+          description: OK

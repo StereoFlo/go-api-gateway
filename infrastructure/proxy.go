@@ -44,7 +44,7 @@ func (s Proxy) ReverseProxy() error {
 	if err != nil {
 		return err
 	}
-	httpMethodPointer, _, err := s.loadServiceMethod(serviceConfig)
+	httpMethod, _, err := s.loadServiceMethod(serviceConfig)
 	if err != nil {
 		return err
 	}
@@ -59,7 +59,7 @@ func (s Proxy) ReverseProxy() error {
 	reverseProxy.Director = func(request *http.Request) {
 		s.setQuery(request)
 		s.setBody(request)
-		request.Method = *httpMethodPointer
+		request.Method = *httpMethod
 		request.Host = parsedUrl.Host
 		request.URL.Scheme = parsedUrl.Scheme
 		request.URL.Host = parsedUrl.Host
