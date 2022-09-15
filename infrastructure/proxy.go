@@ -57,17 +57,21 @@ func (s Proxy) ReverseProxy() error {
 
 	reverseProxy := httputil.NewSingleHostReverseProxy(parsedUrl)
 	reverseProxy.Director = func(request *http.Request) {
+		s.setDirector(request, httpMethod, parsedUrl)
 		s.setQuery(request)
 		s.setBody(request)
-		request.Method = *httpMethod
-		request.Host = parsedUrl.Host
-		request.URL.Scheme = parsedUrl.Scheme
-		request.URL.Host = parsedUrl.Host
-		request.URL.Path = parsedUrl.Path
-		request.Header.Set("x-account-token", s.context.Request.Header.Get("x-account-token"))
 	}
 	reverseProxy.ServeHTTP(s.context.Writer, s.context.Request)
 	return nil
+}
+
+func (s Proxy) setDirector(request *http.Request, httpMethod *string, parsedUrl *url.URL) {
+	request.Method = *httpMethod
+	request.Host = parsedUrl.Host
+	request.URL.Scheme = parsedUrl.Scheme
+	request.URL.Host = parsedUrl.Host
+	request.URL.Path = parsedUrl.Path
+	request.Header.Set("x-account-token", s.context.Request.Header.Get("x-account-token"))
 }
 
 func (s Proxy) setQuery(request *http.Request) {
