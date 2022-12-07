@@ -43,11 +43,13 @@ func (s Proxy) ReverseProxy(ch chan error) {
 	serviceConfig, err := s.loadServiceConfig()
 	if err != nil {
 		ch <- err
+		close(ch)
 		return
 	}
 	httpMethod, _, err := s.loadServiceMethod(serviceConfig)
 	if err != nil {
 		ch <- err
+		close(ch)
 		return
 	}
 
@@ -55,6 +57,7 @@ func (s Proxy) ReverseProxy(ch chan error) {
 	parsedUrl, err := url.Parse(targetUrl)
 	if err != nil {
 		ch <- err
+		close(ch)
 		return
 	}
 
