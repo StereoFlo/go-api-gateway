@@ -7,7 +7,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/gokyle/filecache"
 	"gopkg.in/yaml.v3"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"net/http/httputil"
 	"net/url"
@@ -39,20 +39,23 @@ func NewProxy(context *gin.Context) *Proxy {
 	return &Proxy{context}
 }
 
-func (s Proxy) ReverseProxy() error {
+func (s Proxy) ReverseProxy(ch chan error) {
 	serviceConfig, err := s.loadServiceConfig()
 	if err != nil {
-		return err
+		ch <- err
+		return
 	}
 	httpMethod, _, err := s.loadServiceMethod(serviceConfig)
 	if err != nil {
-		return err
+		ch <- err
+		return
 	}
 
 	targetUrl := s.buildUrl(serviceConfig.Servers[0].Url, s.context.Request.URL.Path) //todo Servers[0] ??
 	parsedUrl, err := url.Parse(targetUrl)
 	if err != nil {
-		return err
+		ch <- err
+		return
 	}
 
 	reverseProxy := httputil.NewSingleHostReverseProxy(parsedUrl)
@@ -62,7 +65,7 @@ func (s Proxy) ReverseProxy() error {
 		s.setBody(request)
 	}
 	reverseProxy.ServeHTTP(s.context.Writer, s.context.Request)
-	return nil
+	close(ch)
 }
 
 func (s Proxy) setDirector(request *http.Request, httpMethod *string, parsedUrl *url.URL) {
@@ -86,11 +89,11 @@ func (s Proxy) setBody(request *http.Request) {
 	if method != http.MethodPost && method != http.MethodPut && method != http.MethodPatch {
 		return
 	}
-	bodyAsBytes, _ := ioutil.ReadAll(s.context.Request.Body)
+	bodyAsBytes, _ := io.ReadAll(s.context.Request.Body)
 	if len(string(bodyAsBytes)) <= 0 {
 		return
 	}
-	body := ioutil.NopCloser(bytes.NewReader(bodyAsBytes))
+	body := io.NopCloser(bytes.NewReader(bodyAsBytes))
 	if body == nil {
 		return
 	}
@@ -110,7 +113,10 @@ func (s Proxy) loadServiceConfig() (*ServiceConfig, error) {
 	}
 	serviceName := parts[0]
 	cache := filecache.NewDefaultCache()
-	cache.Start()
+	err := cache.Start()
+	if err != nil {
+		return nil, err
+	}
 	yamlFile, err := cache.ReadFile(os.Getenv("SERVICE_CONFIG") + "/" + serviceName + ".yaml")
 	if err != nil {
 		return nil, err
@@ -132,12 +138,14 @@ func (s Proxy) loadServiceMethod(c *ServiceConfig) (*string, *Method, error) {
 		if err != nil {
 			return nil, nil, err
 		}
-		for method, methodData := range data {
-			upMethod := strings.ToUpper(method)
-			if ok && upMethod == s.context.Request.Method {
-				return &upMethod, &methodData, nil
+		if ok {
+			for method, methodData := range data {
+				upMethod := strings.ToUpper(method)
+				if upMethod == s.context.Request.Method {
+					return &upMethod, &methodData, nil
+				}
 			}
 		}
 	}
-	return nil, nil, errors.New("something is wrong")
+	return nil, nil, errors.New("not found")
 }

@@ -9,10 +9,13 @@ import (
 
 func HandleProxy(ctx *gin.Context) {
 	proxy := infrastructure.NewProxy(ctx)
-	err := proxy.ReverseProxy()
-	if err != nil {
-		log.Println(err)
-		ctx.AbortWithStatus(http.StatusServiceUnavailable)
+	err := make(chan error)
+	go proxy.ReverseProxy(err)
+	res := <-err
+	if res != nil {
+		responder := infrastructure.NewResponder()
+		log.Println(res)
+		ctx.AbortWithStatusJSON(http.StatusNotFound, responder.Fail(res.Error()))
 		return
 	}
 	return
