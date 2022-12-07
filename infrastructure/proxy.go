@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"github.com/gin-gonic/gin"
 	"github.com/gokyle/filecache"
-	"go_gw/infrastructure/jwt-token"
 	"gopkg.in/yaml.v3"
 	"io"
 	"net/http"
@@ -189,7 +188,7 @@ func (p Proxy) checkToken(token string) error {
 	if token == "" {
 		return errors.New("token is empty")
 	}
-	jwtToken := jwt_token.NewToken()
+	jwtToken := NewToken()
 	_, err := jwtToken.Validate(token)
 	if err != nil {
 		return errors.New("token is wrong")

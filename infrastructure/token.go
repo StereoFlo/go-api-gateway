@@ -1,4 +1,4 @@
-package jwt_token
+package infrastructure
 
 import (
 	"crypto/rsa"
