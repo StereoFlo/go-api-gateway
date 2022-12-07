@@ -1,6 +1,7 @@
 package jwt_token
 
 import (
+	"crypto/rsa"
 	"fmt"
 	"github.com/golang-jwt/jwt/v4"
 	"github.com/google/uuid"
@@ -64,15 +65,19 @@ func (t Token) Validate(token string) (*Claim, error) {
 	if err != nil {
 		return nil, fmt.Errorf("validate: parse key: %w", err)
 	}
-	_, err = jwt.ParseWithClaims(token, &c, func(jwtToken *jwt.Token) (interface{}, error) {
+	_, err = jwt.ParseWithClaims(token, &c, t.parseToken(key))
+	return &c, nil
+}
+
+func (t Token) parseToken(key *rsa.PublicKey) func(jwtToken *jwt.Token) (interface{}, error) {
+	return func(jwtToken *jwt.Token) (interface{}, error) {
 		_, ok := jwtToken.Method.(*jwt.SigningMethodRSA)
 		if !ok {
 			return nil, fmt.Errorf("unexpected method")
 		}
 
 		return key, nil
-	})
-	return &c, nil
+	}
 }
 
 func getKeyData(path string) []byte {
