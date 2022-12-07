@@ -154,7 +154,8 @@ func (s Proxy) loadServiceMethod(c *ServiceConfig) (*string, *Method, error) {
 				if len(methodData.Parameters) > 0 {
 					for _, parameter := range methodData.Parameters {
 						if parameter.In == "header" && parameter.Required == true {
-							err := s.checkToken()
+							token := s.context.Request.Header.Get("X-ACCOUNT-TOKEN")
+							err := s.checkToken(token)
 							if err != nil {
 								return nil, nil, err
 							}
@@ -176,8 +177,7 @@ func (s Proxy) loadServiceMethod(c *ServiceConfig) (*string, *Method, error) {
 	return nil, nil, errors.New("not found")
 }
 
-func (s Proxy) checkToken() error {
-	token := s.context.Request.Header.Get("X-ACCOUNT-TOKEN")
+func (s Proxy) checkToken(token string) error {
 	if token == "" {
 		return errors.New("token is empty")
 	}
