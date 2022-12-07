@@ -65,8 +65,9 @@ func (t Token) Validate(token string) (*Claim, error) {
 		return nil, fmt.Errorf("validate: parse key: %w", err)
 	}
 	_, err = jwt.ParseWithClaims(token, &c, func(jwtToken *jwt.Token) (interface{}, error) {
-		if _, ok := jwtToken.Method.(*jwt.SigningMethodRSA); !ok {
-			return nil, fmt.Errorf("unexpected method: %s", jwtToken.Header["alg"])
+		_, ok := jwtToken.Method.(*jwt.SigningMethodRSA)
+		if !ok {
+			return nil, fmt.Errorf("unexpected method")
 		}
 
 		return key, nil
