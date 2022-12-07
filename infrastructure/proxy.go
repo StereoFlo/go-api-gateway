@@ -43,10 +43,12 @@ type Proxy struct {
 	context *gin.Context
 }
 
+// NewProxy Constructor
 func NewProxy(context *gin.Context) *Proxy {
 	return &Proxy{context}
 }
 
+// ReverseProxy make request to service
 func (s Proxy) ReverseProxy(ch chan error) {
 	serviceConfig, err := s.loadServiceConfig()
 	if err != nil {
@@ -79,6 +81,7 @@ func (s Proxy) ReverseProxy(ch chan error) {
 	close(ch)
 }
 
+// prepare request to service
 func (s Proxy) setDirector(request *http.Request, httpMethod *string, parsedUrl *url.URL) {
 	request.Method = *httpMethod
 	request.Host = parsedUrl.Host
@@ -88,6 +91,7 @@ func (s Proxy) setDirector(request *http.Request, httpMethod *string, parsedUrl 
 	request.Header.Set("x-account-token", s.context.Request.Header.Get("x-account-token"))
 }
 
+// prepare query to service
 func (s Proxy) setQuery(request *http.Request) {
 	if len(s.context.Request.URL.RawQuery) <= 0 {
 		return
@@ -95,6 +99,7 @@ func (s Proxy) setQuery(request *http.Request) {
 	request.URL.RawQuery = s.context.Request.URL.RawQuery
 }
 
+// prepare body to send to service
 func (s Proxy) setBody(request *http.Request) {
 	method := s.context.Request.Method
 	if method != http.MethodPost && method != http.MethodPut && method != http.MethodPatch {
@@ -117,6 +122,7 @@ func (s Proxy) buildUrl(serviceUrl string, path string) string {
 	return targetUrl
 }
 
+// load service config
 func (s Proxy) loadServiceConfig() (*ServiceConfig, error) {
 	parts := strings.Split(strings.TrimPrefix(s.context.Request.URL.Path, "/"), "/")
 	if len(parts) <= 1 {
@@ -141,6 +147,7 @@ func (s Proxy) loadServiceConfig() (*ServiceConfig, error) {
 	return sc, nil
 }
 
+// load service method && checks token if it need
 func (s Proxy) loadServiceMethod(c *ServiceConfig) (*string, *Method, error) {
 	for configPath, data := range c.Paths {
 		regex := regexp.MustCompile(`:[a-z]+`)
@@ -177,6 +184,7 @@ func (s Proxy) loadServiceMethod(c *ServiceConfig) (*string, *Method, error) {
 	return nil, nil, errors.New("not found")
 }
 
+// checks jwt token
 func (s Proxy) checkToken(token string) error {
 	if token == "" {
 		return errors.New("token is empty")
