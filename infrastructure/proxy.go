@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"github.com/gin-gonic/gin"
 	"github.com/gokyle/filecache"
+	"go_gw/infrastructure/jwt-token"
 	"gopkg.in/yaml.v3"
 	"io"
 	"net/http"
@@ -24,7 +25,14 @@ type ServiceConfig struct {
 type Path map[string]Method
 
 type Method struct {
-	Summary string `yaml:"summary"`
+	Summary    string      `yaml:"summary"`
+	Parameters []Parameter `yaml:"parameters"`
+}
+
+type Parameter struct {
+	Name     string `yaml:"name"`
+	In       string `yaml:"in"`
+	Required bool   `yaml:"required"`
 }
 
 type Server struct {
@@ -143,12 +151,40 @@ func (s Proxy) loadServiceMethod(c *ServiceConfig) (*string, *Method, error) {
 		}
 		if ok {
 			for method, methodData := range data {
-				upMethod := strings.ToUpper(method)
-				if upMethod == s.context.Request.Method {
-					return &upMethod, &methodData, nil
+				if len(methodData.Parameters) > 0 {
+					for _, parameter := range methodData.Parameters {
+						if parameter.In == "header" && parameter.Required == true {
+							err := s.checkToken()
+							if err != nil {
+								return nil, nil, err
+							}
+							upMethod := strings.ToUpper(method)
+							if upMethod == s.context.Request.Method {
+								return &upMethod, &methodData, nil
+							}
+						}
+					}
+				} else {
+					upMethod := strings.ToUpper(method)
+					if upMethod == s.context.Request.Method {
+						return &upMethod, &methodData, nil
+					}
 				}
 			}
 		}
 	}
 	return nil, nil, errors.New("not found")
+}
+
+func (s Proxy) checkToken() error {
+	token := s.context.Request.Header.Get("X-ACCOUNT-TOKEN")
+	if token == "" {
+		return errors.New("token is empty")
+	}
+	jwtToken := jwt_token.NewToken()
+	_, err := jwtToken.Validate(token)
+	if err != nil {
+		return errors.New("token is wrong")
+	}
+	return nil
 }
