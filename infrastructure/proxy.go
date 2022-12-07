@@ -125,7 +125,7 @@ func (p Proxy) buildUrl(serviceUrl string, path string) string {
 func (p Proxy) loadServiceConfig() (*ServiceConfig, error) {
 	parts := strings.Split(strings.TrimPrefix(p.context.Request.URL.Path, "/"), "/")
 	if len(parts) <= 1 {
-		return nil, errors.New(fmt.Sprintf("failed to parse target host from path: %p", p.context.Request.URL.Path))
+		return nil, errors.New(fmt.Sprintf("failed to parse target host from path: %s", p.context.Request.URL.Path))
 	}
 	serviceName := parts[0]
 	cache := filecache.NewDefaultCache()
