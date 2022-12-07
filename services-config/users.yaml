@@ -15,6 +15,12 @@ paths:
           description: Лимит списка
           schema:
             type: number
+        - name: x-account-token
+          in: header
+          description: access token from login action
+          required: true
+          schema:
+            type: string
       responses:
         '200':
           description: OK
@@ -26,6 +32,13 @@ paths:
   /v1/users/:id:
     get:
       summary: Возвращает не список
+      parameters:
+        - name: x-account-token
+          in: header
+          description: access token from login action
+          required: true
+          schema:
+            type: string
       responses:
         '200':
           description: OK
