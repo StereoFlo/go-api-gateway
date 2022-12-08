@@ -66,6 +66,10 @@ func (t Token) Validate(token string) (*Claim, error) {
 		return nil, fmt.Errorf("validate: parse key: %w", err)
 	}
 	_, err = jwt.ParseWithClaims(token, &c, t.parseToken(key))
+	if err != nil {
+		return nil, err
+	}
+
 	return &c, nil
 }
 
