@@ -146,8 +146,11 @@ func (p Proxy) loadServiceConfig() (*ServiceConfig, error) {
 	return sc, nil
 }
 
-// load service method && checks token if it need
+// load service method && checks token if it needs
 func (p Proxy) loadServiceMethod(c *ServiceConfig) (*string, *Method, error) {
+	if len(c.Paths) == 0 {
+		return nil, nil, errors.New("not found")
+	}
 	for configPath, data := range c.Paths {
 		regex := regexp.MustCompile(`:[a-z]+`)
 		regexPath := regex.ReplaceAllString(configPath, `.*`)
