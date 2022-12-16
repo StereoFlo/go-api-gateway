@@ -10,13 +10,13 @@ import (
 	"time"
 )
 
-type Data struct {
+type TokenData struct {
 	UserId  int    `json:"user_id"`
 	TokenId string `json:"token_id"`
 }
 
 type Claim struct {
-	Data Data `json:"data"`
+	Data TokenData `json:"data"`
 	jwt.RegisteredClaims
 }
 
@@ -43,7 +43,7 @@ func (t Token) Get(ttl time.Time, userId int) (string, error) {
 	now := time.Now()
 	claims := make(jwt.MapClaims)
 	uid := uuid.New()
-	claims["data"] = Data{
+	claims["data"] = TokenData{
 		UserId:  userId,
 		TokenId: uid.String(),
 	}
@@ -66,6 +66,10 @@ func (t Token) Validate(token string) (*Claim, error) {
 		return nil, fmt.Errorf("validate: parse key: %w", err)
 	}
 	_, err = jwt.ParseWithClaims(token, &c, t.parseToken(key))
+	if err != nil {
+		return nil, err
+	}
+
 	return &c, nil
 }
 

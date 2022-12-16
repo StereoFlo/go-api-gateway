@@ -55,7 +55,14 @@ func (p Proxy) ReverseProxy(ch chan error) {
 		close(ch)
 		return
 	}
-	httpMethod, _, err := p.loadServiceMethod(serviceConfig)
+	httpMethod, methodData, err := p.loadServiceMethod(serviceConfig)
+	if err != nil {
+		ch <- err
+		close(ch)
+		return
+	}
+
+	err = p.checkParameters(methodData)
 	if err != nil {
 		ch <- err
 		close(ch)
@@ -160,30 +167,29 @@ func (p Proxy) loadServiceMethod(c *ServiceConfig) (*string, *Method, error) {
 		}
 		if ok {
 			for method, methodData := range data {
-				if len(methodData.Parameters) > 0 {
-					for _, parameter := range methodData.Parameters {
-						if parameter.In == "header" && parameter.Required == true {
-							token := p.context.Request.Header.Get("X-ACCOUNT-TOKEN")
-							err := p.checkToken(token)
-							if err != nil {
-								return nil, nil, err
-							}
-							upMethod := strings.ToUpper(method)
-							if upMethod == p.context.Request.Method {
-								return &upMethod, &methodData, nil
-							}
-						}
-					}
-				} else {
-					upMethod := strings.ToUpper(method)
-					if upMethod == p.context.Request.Method {
-						return &upMethod, &methodData, nil
-					}
+				upMethod := strings.ToUpper(method)
+				if upMethod == p.context.Request.Method {
+					return &upMethod, &methodData, nil
 				}
 			}
 		}
 	}
 	return nil, nil, errors.New("not found")
+}
+
+func (p Proxy) checkParameters(methodData *Method) error {
+	if len(methodData.Parameters) > 0 {
+		for _, parameter := range methodData.Parameters {
+			if parameter.In == "header" && parameter.Required == true {
+				token := p.context.Request.Header.Get("X-ACCOUNT-TOKEN")
+				err := p.checkToken(token)
+				if err != nil {
+					return err
+				}
+			}
+		}
+	}
+	return nil
 }
 
 // checks jwt token
