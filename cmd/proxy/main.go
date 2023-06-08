@@ -3,7 +3,7 @@ package main
 import (
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
-	"go_gw/http"
+	"go_gw/pkg/ui/http"
 	"log"
 	"os"
 )
