@@ -2,13 +2,13 @@ package http
 
 import (
 	"github.com/gin-gonic/gin"
-	"go_gw/infrastructure"
+	infrastructure2 "go_gw/pkg/infrastructure"
 	"net/http"
 )
 
 func HandleProxy(ctx *gin.Context) {
-	responder := infrastructure.NewResponder()
-	proxy := infrastructure.NewProxy(ctx)
+	responder := infrastructure2.NewResponder()
+	proxy := infrastructure2.NewProxy(ctx)
 	errCh := make(chan error)
 	go proxy.ReverseProxy(errCh)
 	res := <-errCh
